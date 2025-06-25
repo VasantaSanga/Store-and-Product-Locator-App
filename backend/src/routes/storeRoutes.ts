@@ -11,13 +11,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 interface CsvRow {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  latitude: string; // CSV data might be string, parse to Float
-  longitude: string; // CSV data might be string, parse to Float
-  products: string; // Expecting a comma-separated string of product names
+  [key: string]: string; // Allow any column names from CSV
 }
 
 router.post('/upload', upload.single('csvfile'), async (req, res) => {
@@ -31,11 +25,63 @@ router.post('/upload', upload.single('csvfile'), async (req, res) => {
   readableStream
     .pipe(csvParser())
     .on('data', (data: any) => {
+      // Map the CSV columns to our expected format
+      const normalizedRow: any = {};
+      
+      // Debug: Log the first few rows to understand the structure
+      console.log('CSV row data:', data);
+      
+      // Map column names (case-insensitive and flexible)
+      const keys = Object.keys(data);
+      keys.forEach(key => {
+        const lowerKey = key.toLowerCase().trim();
+        // Handle store name variations
+        if (lowerKey === 'store name' || lowerKey === 'storename' || lowerKey === 'name') {
+          normalizedRow.name = data[key];
+        } 
+        // Handle address
+        else if (lowerKey === 'address') {
+          normalizedRow.address = data[key];
+        } 
+        // Handle city/town variations
+        else if (lowerKey === 'town' || lowerKey === 'city') {
+          normalizedRow.city = data[key];
+        } 
+        // Handle state
+        else if (lowerKey === 'state') {
+          normalizedRow.state = data[key];
+        } 
+        // Handle store number
+        else if (lowerKey === 'store #' || lowerKey === 'store' || lowerKey === 'store number') {
+          normalizedRow.storeNumber = data[key];
+        }
+      });
+
+      // Debug: Log the normalized row
+      console.log('Normalized row:', {
+        name: normalizedRow.name,
+        address: normalizedRow.address,
+        city: normalizedRow.city,
+        state: normalizedRow.state
+      });
+
       // Basic validation: ensure essential fields are present
-      if (data.name && data.address && data.city && data.state && data.latitude && data.longitude && data.products) {
-        results.push(data as CsvRow);
+      // Skip rows with empty or missing store names
+      if (normalizedRow.name && normalizedRow.name.trim() && 
+          normalizedRow.address && normalizedRow.address.trim() && 
+          normalizedRow.city && normalizedRow.city.trim() && 
+          normalizedRow.state && normalizedRow.state.trim()) {
+        // Add the raw data for product processing
+        normalizedRow.rawData = data;
+        results.push(normalizedRow as CsvRow);
       } else {
-        console.warn('Skipping incomplete row:', data);
+        console.warn('Skipping incomplete row - missing required fields:', {
+          name: normalizedRow.name,
+          address: normalizedRow.address,
+          city: normalizedRow.city,
+          state: normalizedRow.state,
+          availableKeys: Object.keys(data)
+        });
       }
     })
     .on('end', async () => {
@@ -44,33 +90,48 @@ router.post('/upload', upload.single('csvfile'), async (req, res) => {
       }
       try {
         for (const row of results) {
-          const lat = parseFloat(row.latitude);
-          const lon = parseFloat(row.longitude);
-
-          if (isNaN(lat) || isNaN(lon)) {
-            console.warn(`Skipping row due to invalid latitude/longitude: ${row.name}`);
-            continue;
+          // Generate realistic coordinates based on city and state
+          // This is a temporary solution - ideally you'd use a geocoding service
+          let lat = 0;
+          let lon = 0;
+          
+          // Generate coordinates based on state (rough approximations)
+          const stateCoords: { [key: string]: { lat: number, lon: number } } = {
+            'CA': { lat: 36.7783, lon: -119.4179 },
+            'TX': { lat: 31.9686, lon: -99.9018 },
+            'FL': { lat: 27.7663, lon: -81.6868 },
+            'NY': { lat: 40.7589, lon: -73.9851 },
+            'IL': { lat: 40.6331, lon: -89.3985 },
+            'PA': { lat: 41.2033, lon: -77.1945 },
+            'OH': { lat: 40.3888, lon: -82.7649 },
+            'GA': { lat: 33.7490, lon: -84.3880 },
+            'NC': { lat: 35.7596, lon: -79.0193 },
+            'MI': { lat: 43.3266, lon: -84.5361 },
+            'VT': { lat: 44.2601, lon: -72.5806 },
+            'NH': { lat: 43.1939, lon: -71.5724 },
+            'MA': { lat: 42.2081, lon: -71.0275 },
+            'RI': { lat: 41.6809, lon: -71.5118 }
+          };
+          
+          if (stateCoords[row.state]) {
+            // Add some randomness to spread stores around the state
+            const baseCoords = stateCoords[row.state];
+            lat = baseCoords.lat + (Math.random() - 0.5) * 2; // ±1 degree variation
+            lon = baseCoords.lon + (Math.random() - 0.5) * 2; // ±1 degree variation
+          } else {
+            // Fallback for unknown states - center of US with variation
+            lat = 39.8283 + (Math.random() - 0.5) * 10;
+            lon = -98.5795 + (Math.random() - 0.5) * 20;
           }
 
-          // Upsert store (create if not exists, update if exists based on name and city for simplicity)
-          // A more robust upsert might use a unique business ID if available
+          // Upsert store using the composite unique constraint (name, city, state)
           const store = await prisma.store.upsert({
             where: {
-              // This requires a unique constraint on name+city or a similar unique identifier.
-              // For now, let's assume name is unique enough for this example or we add such a constraint.
-              // To avoid errors if multiple stores have the same name, we'll find by name and city.
-              // This is not a perfect unique identifier, but good for this example.
-              // A true unique constraint in the DB on (name, city, state) would be better.
-              // For now, we'll try to find an existing store by name, city, and state.
-              // Prisma doesn't support upsert on non-unique fields directly.
-              // So, we'll do a findFirst then update or create.
-              name_city_state: { // This assumes we add a composite unique constraint in schema.prisma
-                                // name_city_state: { name: row.name, city: row.city, state: row.state }
-                                // If not, this specific upsert will fail.
-                                // Let's adjust to a findFirst then update/create pattern for more flexibility without schema change yet.
-                                name: row.name // Simplified: assuming store name is unique for now.
-                                             // In a real app, more robust identification is needed.
-                            }
+              name_city_state: {
+                name: row.name,
+                city: row.city,
+                state: row.state
+              }
             },
             update: {
               address: row.address,
@@ -89,29 +150,42 @@ router.post('/upload', upload.single('csvfile'), async (req, res) => {
             },
           });
 
-          // Process products
-          const productNames = row.products.split(',').map(name => name.trim()).filter(name => name.length > 0);
-          for (const productName of productNames) {
-            const product = await prisma.product.upsert({
-              where: { name: productName },
-              update: {},
-              create: { name: productName },
-            });
+                     // Process products - look for Yes/No columns for product availability
+           const rawData = (row as any).rawData;
+           const productColumns = [
+             'VTQuila',
+             'Woodland Gin', 
+             'Maple Cask Bourbon',
+             'Vodka',
+             'Mountain Water Lemon Lime Honey (Agave Spirit)'
+           ];
 
-            // Link store and product
-            await prisma.storeProduct.upsert({
-              where: {
-                storeId_productId: { // This refers to the @@unique([storeId, productId]) in schema.prisma
+           for (const productName of productColumns) {
+             // Check if this product is available at this store (looking for "Yes")
+             const isAvailable = rawData[productName] && rawData[productName].toLowerCase().trim() === 'yes';
+            
+            if (isAvailable) {
+              const product = await prisma.product.upsert({
+                where: { name: productName },
+                update: {},
+                create: { name: productName },
+              });
+
+              // Link store and product
+              await prisma.storeProduct.upsert({
+                where: {
+                  storeId_productId: {
+                    storeId: store.id,
+                    productId: product.id,
+                  },
+                },
+                update: {},
+                create: {
                   storeId: store.id,
                   productId: product.id,
                 },
-              },
-              update: {}, // No fields to update on the link table itself if it exists
-              create: {
-                storeId: store.id,
-                productId: product.id,
-              },
-            });
+              });
+            }
           }
         }
         res.status(201).send({ message: 'CSV data processed and stored successfully.', count: results.length });
@@ -119,9 +193,9 @@ router.post('/upload', upload.single('csvfile'), async (req, res) => {
         console.error('Error processing CSV data:', error);
         // Check if error is a Prisma specific error for more detailed feedback
         if (error instanceof Error && 'code' in error && (error as any).code === 'P2002') {
-             res.status(409).send('Error processing CSV: A unique constraint violation occurred. This might be due to the store identification logic needing a unique constraint in your database (e.g., on store name, or name+city+state).');
+             res.status(409).send({ message: 'Error processing CSV: A unique constraint violation occurred. This might be due to duplicate store data in the CSV.', error: (error as any).message });
         } else {
-            res.status(500).send('Error processing CSV data.');
+            res.status(500).send({ message: 'Error processing CSV data.', error: error instanceof Error ? error.message : 'Unknown error' });
         }
       }
     })

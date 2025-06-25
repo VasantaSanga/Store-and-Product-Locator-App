@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // useCallback removed as it's not strictly needed here with current setup
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Product, Filters } from '../types';
 
@@ -23,7 +23,6 @@ const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange }) => {
   const [errorStates, setErrorStates] = useState<string|null>(null);
   const [errorCities, setErrorCities] = useState<string|null>(null);
   const [errorProducts, setErrorProducts] = useState<string|null>(null);
-
 
   // Fetch states
   useEffect(() => {
@@ -65,7 +64,7 @@ const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange }) => {
     } else {
       setCities([]);
       setSelectedCity('');
-      setErrorCities(null); // Clear city errors if no state is selected
+      setErrorCities(null);
     }
   }, [selectedState]);
 
@@ -95,6 +94,22 @@ const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange }) => {
     );
   };
 
+  const handleResetFilters = () => {
+    setSelectedState('');
+    setSelectedCity('');
+    setSelectedProductIds([]);
+    setCities([]);
+    setErrorCities(null);
+  };
+
+  const handleSelectAllProducts = () => {
+    if (selectedProductIds.length === products.length) {
+      setSelectedProductIds([]);
+    } else {
+      setSelectedProductIds(products.map(product => product.id));
+    }
+  };
+
   useEffect(() => {
     onFiltersChange({
       state: selectedState || null,
@@ -103,68 +118,149 @@ const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange }) => {
     });
   }, [selectedState, selectedCity, selectedProductIds, onFiltersChange]);
 
+  const hasActiveFilters = selectedState || selectedCity || selectedProductIds.length > 0;
 
   return (
-    <div>
-      <h4>Filter Options</h4> {/* Changed from h3 to h4 to be consistent with CsvUploadForm */}
-
-      <div className="filter-group">
-        <label htmlFor="state-select">State:</label>
-        <select
-          id="state-select"
-          value={selectedState}
-          onChange={e => setSelectedState(e.target.value)}
-          disabled={isLoadingStates || errorStates !== null}
-        >
-          <option value="">{isLoadingStates ? 'Loading states...' : (errorStates ? 'Error loading' : 'Select State')}</option>
-          {states.map(state => (
-            <option key={state} value={state}>{state}</option>
-          ))}
-        </select>
-        {errorStates && <p className="message-error" style={{fontSize: '0.8rem', marginTop: '0.2rem'}}>{errorStates}</p>}
+    <div className="filter-controls">
+      <div className="filter-header">
+        <h4>🔍 Filter Stores</h4>
+        {hasActiveFilters && (
+          <button 
+            className="reset-filters-btn"
+            onClick={handleResetFilters}
+            title="Clear all filters"
+          >
+            ✕ Reset
+          </button>
+        )}
       </div>
 
-      <div className="filter-group">
-        <label htmlFor="city-select">City:</label>
-        <select
-          id="city-select"
-          value={selectedCity}
-          onChange={e => setSelectedCity(e.target.value)}
-          disabled={!selectedState || isLoadingCities || cities.length === 0 && !errorCities}
-        >
-          <option value="">
-            {isLoadingCities ? 'Loading cities...' :
-             errorCities ? 'Error loading' :
-             !selectedState ? 'Select State First' :
-             cities.length === 0 ? 'No cities found' : 'Select City'}
-          </option>
-          {cities.map(city => (
-            <option key={city} value={city}>{city}</option>
-          ))}
-        </select>
-        {errorCities && <p className="message-error" style={{fontSize: '0.8rem', marginTop: '0.2rem'}}>{errorCities}</p>}
-      </div>
+      <div className="filters-container">
+        {/* Location Filters */}
+        <div className="filter-section">
+          <h5 className="filter-section-title">📍 Location</h5>
+          
+          <div className="filter-group">
+            <label htmlFor="state-select" className="filter-label">State:</label>
+            <div className="select-wrapper">
+              <select
+                id="state-select"
+                value={selectedState}
+                onChange={e => setSelectedState(e.target.value)}
+                disabled={isLoadingStates || errorStates !== null}
+                className="filter-select"
+              >
+                <option value="">{isLoadingStates ? 'Loading states...' : (errorStates ? 'Error loading' : 'All States')}</option>
+                {states.map(state => (
+                  <option key={state} value={state}>{state}</option>
+                ))}
+              </select>
+              {isLoadingStates && <div className="loading-spinner"></div>}
+            </div>
+            {errorStates && <p className="error-message">{errorStates}</p>}
+          </div>
 
-      <div className="filter-group">
-        <label>Products:</label> {/* Changed from h4 to label for consistency */}
-        {isLoadingProducts && <p className="loading-text" style={{fontSize: '0.8rem'}}>Loading products...</p>}
-        {errorProducts && <p className="message-error" style={{fontSize: '0.8rem'}}>{errorProducts}</p>}
-        {!isLoadingProducts && !errorProducts && products.length === 0 && <p className="info-text" style={{fontSize: '0.8rem'}}>No products available.</p>}
+          <div className="filter-group">
+            <label htmlFor="city-select" className="filter-label">City:</label>
+            <div className="select-wrapper">
+              <select
+                id="city-select"
+                value={selectedCity}
+                onChange={e => setSelectedCity(e.target.value)}
+                disabled={!selectedState || isLoadingCities || cities.length === 0 && !errorCities}
+                className="filter-select"
+              >
+                <option value="">
+                  {isLoadingCities ? 'Loading cities...' :
+                   errorCities ? 'Error loading' :
+                   !selectedState ? 'Select State First' :
+                   cities.length === 0 ? 'No cities found' : 'All Cities'}
+                </option>
+                {cities.map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
+              {isLoadingCities && <div className="loading-spinner"></div>}
+            </div>
+            {errorCities && <p className="error-message">{errorCities}</p>}
+          </div>
+        </div>
 
-        {!isLoadingProducts && !errorProducts && products.length > 0 && (
-          <div className="product-list">
-            {products.map(product => (
-              <div key={product.id}>
-                <input
-                  type="checkbox"
-                  id={`product-${product.id}`}
-                  value={product.id}
-                  checked={selectedProductIds.includes(product.id)}
-                  onChange={() => handleProductChange(product.id)}
-                />
-                <label htmlFor={`product-${product.id}`}>{product.name}</label>
+        {/* Products Filter */}
+        <div className="filter-section">
+          <div className="products-header">
+            <h5 className="filter-section-title">🛍️ Products</h5>
+            {!isLoadingProducts && !errorProducts && products.length > 0 && (
+              <button 
+                className="select-all-btn"
+                onClick={handleSelectAllProducts}
+                title={selectedProductIds.length === products.length ? "Deselect all products" : "Select all products"}
+              >
+                {selectedProductIds.length === products.length ? "Deselect All" : "Select All"}
+              </button>
+            )}
+          </div>
+          
+          <div className="filter-group">
+            {isLoadingProducts && (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <span className="loading-text">Loading products...</span>
               </div>
-            ))}
+            )}
+            
+            {errorProducts && <p className="error-message">{errorProducts}</p>}
+            
+            {!isLoadingProducts && !errorProducts && products.length === 0 && (
+              <p className="info-message">No products available.</p>
+            )}
+
+            {!isLoadingProducts && !errorProducts && products.length > 0 && (
+              <div className="product-list">
+                {products.map(product => (
+                  <div key={product.id} className="product-item">
+                    <input
+                      type="checkbox"
+                      id={`product-${product.id}`}
+                      value={product.id}
+                      checked={selectedProductIds.includes(product.id)}
+                      onChange={() => handleProductChange(product.id)}
+                      className="product-checkbox"
+                    />
+                    <label htmlFor={`product-${product.id}`} className="product-label">
+                      {product.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active Filters Summary */}
+        {hasActiveFilters && (
+          <div className="active-filters-summary">
+            <h6>Active Filters:</h6>
+            <div className="filter-tags">
+              {selectedState && (
+                <span className="filter-tag">
+                  State: {selectedState}
+                  <button onClick={() => setSelectedState('')} className="remove-tag">×</button>
+                </span>
+              )}
+              {selectedCity && (
+                <span className="filter-tag">
+                  City: {selectedCity}
+                  <button onClick={() => setSelectedCity('')} className="remove-tag">×</button>
+                </span>
+              )}
+              {selectedProductIds.length > 0 && (
+                <span className="filter-tag">
+                  Products: {selectedProductIds.length} selected
+                  <button onClick={() => setSelectedProductIds([])} className="remove-tag">×</button>
+                </span>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -22,6 +22,8 @@ model Store {
   updatedAt DateTime @updatedAt
 
   products StoreProduct[]
+
+  @@unique([name, city, state], name: "name_city_state")
 }
 
 model Product {

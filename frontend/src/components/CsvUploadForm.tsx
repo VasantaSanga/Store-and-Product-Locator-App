@@ -67,7 +67,20 @@ const CsvUploadForm: React.FC = () => {
             onChange={handleFileChange}
           />
         </div>
-        <button type="submit" disabled={!file || isLoading} style={{width: '100%'}}>
+        <button 
+          type="submit" 
+          disabled={!file || isLoading} 
+          style={{
+            width: '100%',
+            backgroundColor: '#ce7940',
+            color: 'white',
+            padding: '0.5rem 1rem',
+            borderRadius: '0.375rem',
+            border: 'none',
+            cursor: file && !isLoading ? 'pointer' : 'not-allowed',
+            opacity: (!file || isLoading) ? 0.6 : 1
+          }}
+        >
           {isLoading ? 'Uploading...' : 'Upload CSV'}
         </button>
       </form>

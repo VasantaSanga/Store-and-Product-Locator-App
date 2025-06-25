@@ -9,7 +9,7 @@ export default defineConfig({
     proxy: {
       // Proxy API requests to the backend
       '/api': {
-        target: 'http://localhost:3000', // Backend runs on port 3000 as per .env
+        target: 'http://localhost:3001', // Backend runs on port 3001 as per backend/src/index.ts
         changeOrigin: true,
       }
     }
