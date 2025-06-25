@@ -1,0 +1,161 @@
+/* General App Structure */
+#root {
+  /* max-width: 1280px; */ /* Allow full width */
+  margin: 0 auto;
+  padding: 0; /* Remove default padding, App.tsx will handle its own */
+  text-align: left; /* Default to left align, center specific elements if needed */
+}
+
+header {
+  background-color: #f8f9fa;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #dee2e6;
+  text-align: center;
+  margin-bottom: 1.5rem; /* Consistent with App.tsx inline style */
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #333;
+}
+
+.app-layout {
+  display: flex;
+  gap: 1.5rem; /* Consistent with App.tsx inline style, adjust if needed */
+  padding: 0 1.5rem 1.5rem 1.5rem; /* Padding for the overall content area */
+}
+
+.sidebar {
+  width: 320px; /* Slightly wider sidebar */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0; /* Prevents flex item from overflowing if content is too wide */
+}
+
+.sidebar-section, .main-section {
+  padding: 1rem;
+  border: 1px solid #e0e0e0; /* Softer border */
+  border-radius: 8px;
+  background-color: #ffffff; /* Explicit white background for sections */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
+}
+
+.sidebar-section h2, .sidebar-section h3, .sidebar-section h4 {
+  margin-top: 0;
+  color: #444;
+}
+
+
+/* Component specific styles that might be good globally */
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 0.5em 1em;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #0056b3;
+  border-color: transparent; /* Override index.css hover */
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+input[type="file"] {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+select, input[type="text"] /* If we add text inputs later */ {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  box-sizing: border-box; /* Important for width 100% */
+  font-size: 0.9rem;
+}
+
+label {
+  font-weight: 500;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+/* FilterControls specific improvements */
+.filter-group div {
+  margin-bottom: 0.75rem; /* Space between filter elements */
+}
+
+.product-list {
+  max-height: 180px; /* Slightly less height */
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background-color: #fdfdfd; /* Slightly off-white for list background */
+}
+
+.product-list div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.3rem; /* Space between checkboxes */
+}
+
+.product-list input[type="checkbox"] {
+  margin-right: 0.5rem;
+  width: auto; /* Override global input style if needed for checkbox */
+}
+
+/* Message styles */
+.message-success {
+  color: green;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.message-error {
+  color: red;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Map Display InfoWindow (can be targeted if needed, but @react-google-maps/api usually styles it well) */
+/* .gm-style .gm-style-iw-c { padding: 10px !important; } */ /* Example if more control is needed */
+
+/* Loading / Info messages */
+.loading-text, .info-text, .error-text {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.95rem;
+  color: #555;
+}
+.error-text {
+  color: #d9534f; /* Bootstrap danger color */
+}
+
+/* Responsive considerations (basic) */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    padding-right: 0;
+    margin-bottom: 1.5rem;
+  }
+}
