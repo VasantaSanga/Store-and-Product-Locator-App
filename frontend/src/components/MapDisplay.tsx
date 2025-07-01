@@ -8,13 +8,15 @@ interface MapDisplayProps {
   filters: Filters;
   selectedStore: Store | null;
   onStoreSelect: (store: Store | null) => void;
+  refreshTrigger?: number;
 }
 
 const MapDisplay: React.FC<MapDisplayProps> = ({ 
   apiKey, 
   filters, 
   selectedStore, 
-  onStoreSelect 
+  onStoreSelect,
+  refreshTrigger 
 }) => {
   const [stores, setStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -22,8 +24,6 @@ const MapDisplay: React.FC<MapDisplayProps> = ({
   const [mapError, setMapError] = useState<string | null>(null);
   const [showInfoWindow, setShowInfoWindow] = useState<boolean>(false);
   const mapRef = useRef<google.maps.Map | null>(null);
-
-
 
   const mapContainerStyle = {
     width: '100%',
@@ -101,7 +101,7 @@ const MapDisplay: React.FC<MapDisplayProps> = ({
     };
 
     fetchStores();
-  }, [filters]); // Re-fetch when filters change
+  }, [filters, refreshTrigger]);
 
   const handleMarkerClick = (store: Store) => {
     // Immediately close any existing InfoWindow
@@ -185,7 +185,7 @@ const MapDisplay: React.FC<MapDisplayProps> = ({
             fullscreenControl: true
           }}
         >
-                    {stores.map((store, index) => {
+          {stores.map((store, index) => {
             const isSelected = selectedStore?.id === store.id;
             return (
               <Marker
@@ -233,8 +233,6 @@ const MapDisplay: React.FC<MapDisplayProps> = ({
           )}
         </GoogleMap>
       </LoadScript>
-      
-
       
       {/* Status messages overlay */}
       {isLoading && (

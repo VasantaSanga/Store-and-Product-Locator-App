@@ -1,7 +1,11 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import axios from 'axios';
 
-const CsvUploadForm: React.FC = () => {
+interface CsvUploadFormProps {
+  onUploadSuccess?: () => void;
+}
+
+const CsvUploadForm: React.FC<CsvUploadFormProps> = ({ onUploadSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -42,6 +46,11 @@ const CsvUploadForm: React.FC = () => {
       const fileInput = document.getElementById('csv-file-input') as HTMLInputElement;
       if (fileInput) {
         fileInput.value = ''; // Clear the file input visually
+      }
+      
+      // Call the success callback to refresh data in parent components
+      if (onUploadSuccess) {
+        onUploadSuccess();
       }
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response) {

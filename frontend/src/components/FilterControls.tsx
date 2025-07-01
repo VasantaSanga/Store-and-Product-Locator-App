@@ -4,9 +4,10 @@ import { Product, Filters } from '../types';
 
 interface FilterControlsProps {
   onFiltersChange: (filters: Filters) => void;
+  refreshTrigger?: number;
 }
 
-const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange }) => {
+const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange, refreshTrigger }) => {
   const [states, setStates] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState<string>('');
 
@@ -24,23 +25,47 @@ const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange }) => {
   const [errorCities, setErrorCities] = useState<string|null>(null);
   const [errorProducts, setErrorProducts] = useState<string|null>(null);
 
-  // Fetch states
-  useEffect(() => {
-    const fetchStates = async () => {
-      setIsLoadingStates(true);
-      setErrorStates(null);
-      try {
-        const response = await axios.get<string[]>('/api/filters/states');
-        setStates(response.data);
-      } catch (error) {
-        console.error('Error fetching states:', error);
-        setErrorStates('Failed to load states.');
-      } finally {
-        setIsLoadingStates(false);
+  // Function to fetch states
+  const fetchStates = async () => {
+    setIsLoadingStates(true);
+    setErrorStates(null);
+    try {
+      const response = await axios.get<string[]>('/api/filters/states');
+      setStates(response.data);
+    } catch (error) {
+      console.error('Error fetching states:', error);
+      setErrorStates('Failed to load states.');
+    } finally {
+      setIsLoadingStates(false);
+    }
+  };
+
+  // Function to fetch products
+  const fetchProducts = async () => {
+    setIsLoadingProducts(true);
+    setErrorProducts(null);
+    try {
+      const response = await axios.get<Product[]>('/api/filters/products');
+      setProducts(response.data);
+      
+      // Automatically select all products when they're loaded
+      // This happens on initial load AND after CSV upload refresh
+      if (response.data.length > 0) {
+        const allProductIds = response.data.map(product => product.id);
+        setSelectedProductIds(allProductIds);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setErrorProducts('Failed to load products.');
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  // Fetch states - trigger on mount and refreshTrigger change
+  useEffect(() => {
     fetchStates();
-  }, []);
+  }, [refreshTrigger]);
 
   // Fetch cities when selectedState changes
   useEffect(() => {
@@ -68,23 +93,10 @@ const FilterControls: React.FC<FilterControlsProps> = ({ onFiltersChange }) => {
     }
   }, [selectedState]);
 
-  // Fetch products
+  // Fetch products - trigger on mount and refreshTrigger change
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoadingProducts(true);
-      setErrorProducts(null);
-      try {
-        const response = await axios.get<Product[]>('/api/filters/products');
-        setProducts(response.data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setErrorProducts('Failed to load products.');
-      } finally {
-        setIsLoadingProducts(false);
-      }
-    };
     fetchProducts();
-  }, []);
+  }, [refreshTrigger]);
 
   const handleProductChange = (productId: string) => {
     setSelectedProductIds(prevSelected =>

@@ -6,12 +6,14 @@ interface StoreListDisplayProps {
   filters: Filters;
   selectedStore: Store | null;
   onStoreSelect: (store: Store | null) => void;
+  refreshTrigger?: number;
 }
 
 const StoreListDisplay: React.FC<StoreListDisplayProps> = ({ 
   filters, 
   selectedStore, 
-  onStoreSelect 
+  onStoreSelect,
+  refreshTrigger 
 }) => {
   const [stores, setStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -40,7 +42,7 @@ const StoreListDisplay: React.FC<StoreListDisplayProps> = ({
     };
 
     fetchStores();
-  }, [filters]);
+  }, [filters, refreshTrigger]);
 
   const handleStoreClick = (store: Store) => {
     // Toggle selection: if clicking the same store, deselect it

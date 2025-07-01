@@ -18,6 +18,8 @@ function App() {
   });
   
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const [isRefreshingData, setIsRefreshingData] = useState<boolean>(false);
 
   const handleFilterChange = useCallback((newFilters: Filters) => {
     setActiveFilters(newFilters);
@@ -29,6 +31,19 @@ function App() {
     setSelectedStore(store);
   }, []);
 
+  const handleUploadSuccess = useCallback(() => {
+    // Show loading state
+    setIsRefreshingData(true);
+    
+    // Trigger refresh in FilterControls by incrementing the trigger
+    setRefreshTrigger(prev => prev + 1);
+    
+    // Hide loading state after a short delay to allow components to refresh
+    setTimeout(() => {
+      setIsRefreshingData(false);
+    }, 1500);
+  }, []);
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -36,17 +51,30 @@ function App() {
         <h1 className="text-3xl font-bold text-center">Store & Product Locator</h1>
       </header>
 
+      {/* Loading overlay */}
+      {isRefreshingData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
+            <span className="text-lg font-medium text-gray-700">Refreshing data...</span>
+          </div>
+        </div>
+      )}
+
       {/* Main Layout */}
       <div className="flex-1 flex gap-4 p-4 overflow-hidden">
         {/* Sidebar - Filters and Store List - SCROLLABLE - 30% width */}
         <aside className="w-[30%] flex-shrink-0 overflow-y-auto">
           <div className="space-y-4">
             <div className="bg-white rounded-xl p-4 shadow-lg">
-              <CsvUploadForm />
+              <CsvUploadForm onUploadSuccess={handleUploadSuccess} />
             </div>
             
             <div className="bg-white rounded-xl p-4 shadow-lg">
-              <FilterControls onFiltersChange={handleFilterChange} />
+              <FilterControls 
+                onFiltersChange={handleFilterChange} 
+                refreshTrigger={refreshTrigger}
+              />
             </div>
 
             {/* Store List Section */}
@@ -56,6 +84,7 @@ function App() {
                 filters={activeFilters} 
                 selectedStore={selectedStore}
                 onStoreSelect={handleStoreSelect}
+                refreshTrigger={refreshTrigger}
               />
             </div>
           </div>
@@ -71,6 +100,7 @@ function App() {
                   filters={activeFilters}
                   selectedStore={selectedStore}
                   onStoreSelect={handleStoreSelect}
+                  refreshTrigger={refreshTrigger}
                 />
               </div>
             ) : (
