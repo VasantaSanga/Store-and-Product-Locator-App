@@ -1,18 +1,24 @@
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
 
-// Load environment variables FIRST, before any other imports
-dotenv.config();
+// load env config
+config();
 
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 
+export const Environments = {
+  DEVELOPMENT: 'development',
+  STAGING: 'staging',
+  PRODUCTION: 'production'
+};
+
 // Configuration object
-const config = {
+const configs = {
+  NODE_ENV: process.env.NODE_ENV ?? Environments.DEVELOPMENT,
   PORT: parseInt(process.env.PORT || '3001', 10),
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  DATABASE_URL: process.env.DATABASE_URL || '',
-  NODE_ENV: process.env.NODE_ENV || 'development'
+  DATABASE_URL: process.env.DATABASE_URL || ''
 };
 
 const app: Express = express();
@@ -22,7 +28,7 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
-  origin: config.CORS_ORIGIN, // Use config instead of hardcoded value
+  origin: configs.CORS_ORIGIN, // Use config instead of hardcoded value
   credentials: true
 }));
 app.use(express.json()); // Parses incoming requests with JSON payloads
@@ -58,8 +64,8 @@ process.on('SIGTERM', async () => {
 });
 
 // Start server
-app.listen(config.PORT, () => {
-  console.log(`Server is running on http://localhost:${config.PORT}`);
+app.listen(configs.PORT, () => {
+  console.log(`Server is running on http://localhost:${configs.PORT}`);
 });
 // Export prisma client for use in other modules (routes)
 export { prisma };
