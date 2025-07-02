@@ -28,9 +28,6 @@ router.post('/upload', upload.single('csvfile'), async (req, res) => {
       // Map the CSV columns to our expected format
       const normalizedRow: any = {};
       
-      // Debug: Log the first few rows to understand the structure
-      console.log('CSV row data:', data);
-      
       // Map column names (case-insensitive and flexible)
       const keys = Object.keys(data);
       keys.forEach(key => {
@@ -55,14 +52,6 @@ router.post('/upload', upload.single('csvfile'), async (req, res) => {
         else if (lowerKey === 'store #' || lowerKey === 'store' || lowerKey === 'store number') {
           normalizedRow.storeNumber = data[key];
         }
-      });
-
-      // Debug: Log the normalized row
-      console.log('Normalized row:', {
-        name: normalizedRow.name,
-        address: normalizedRow.address,
-        city: normalizedRow.city,
-        state: normalizedRow.state
       });
 
       // Basic validation: ensure essential fields are present

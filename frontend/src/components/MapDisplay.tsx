@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import axios from 'axios';
-import { Store, Filters, Product } from '../types';
+import { Store, Filters } from '../types';
 
 interface MapDisplayProps {
   apiKey: string;
@@ -185,17 +185,14 @@ const MapDisplay: React.FC<MapDisplayProps> = ({
             fullscreenControl: true
           }}
         >
-          {stores.map((store, index) => {
-            const isSelected = selectedStore?.id === store.id;
-            return (
-              <Marker
-                key={store.id}
-                position={{ lat: store.latitude, lng: store.longitude }}
-                onClick={() => handleMarkerClick(store)}
-                title={store.name}
-              />
-            );
-          })}
+          {stores.map((store) => (
+            <Marker
+              key={store.id}
+              position={{ lat: store.latitude, lng: store.longitude }}
+              onClick={() => handleMarkerClick(store)}
+              title={store.name}
+            />
+          ))}
 
           {selectedStore && showInfoWindow && (
             <InfoWindow
