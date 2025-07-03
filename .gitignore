@@ -12,7 +12,7 @@ build/
 *.tsbuildinfo
 
 # Environment variables
-# (removed .env files from gitignore - they will now be committed)
+**/.env*
 
 # Database
 *.db
