@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173, // Default Vite port, to avoid conflict with backend on 3000
+    allowedHosts: ['d7608345594c.ngrok-free.app'],
     proxy: {
       // Proxy API requests to the backend
       '/api': {
